@@ -1,0 +1,28 @@
+{
+    "name": "blockvis/civic-sip-php",
+    "description": "The Civic Secure Identity Platform API client.",
+    "keywords": ["civic", "api", "sip", "authorization", "blockchain"],
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Blockvis Team",
+            "email": "blockvis@blockvis.com",
+            "homepage": "https://blockvis.com"
+        }
+    ],
+    "require": {
+        "ramsey/uuid": "^3.7",
+        "lcobucci/jwt": "4.0.0-alpha1",
+        "mdanter/ecc": "^0.4.2",
+        "guzzlehttp/guzzle": "^6.3"
+    },
+    "require-dev": {
+        "phpspec/phpspec": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Blockvis\\Civic\\Sip\\": "src/"
+        }
+    }
+}

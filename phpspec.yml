@@ -1,0 +1,5 @@
+suites:
+  civic_sip_suite:
+    namespace: Blockvis\Civic\Sip
+    psr4_prefix: Blockvis\Civic\Sip
+formatter.name: pretty

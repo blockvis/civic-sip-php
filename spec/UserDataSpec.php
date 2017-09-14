@@ -26,12 +26,20 @@ class UserDataSpec extends ObjectBehavior
     function it_returns_data_items()
     {
         $items = [
-            new UserDataItem('label1', 'value1', true, true),
-            new UserDataItem('label2', 'value2', true, false),
+            ['label' => 'label1', 'value' => 'value1', 'isValid' => true, 'isOwner' => true],
+            ['label' => 'label2', 'value' => 'value2', 'isValid' => true, 'isOwner' => false],
         ];
 
         $this->beConstructedWith('userId', $items);
-        $this->items()->shouldBe($items);
+        $items = $this->items();
+        $items[0]->label()->shouldBe('label1');
+        $items[0]->value()->shouldBe('value1');
+        $items[0]->isValid()->shouldBe(true);
+        $items[0]->isOwner()->shouldBe(true);
+        $items[1]->label()->shouldBe('label2');
+        $items[1]->value()->shouldBe('value2');
+        $items[1]->isValid()->shouldBe(true);
+        $items[1]->isOwner()->shouldBe(false);
     }
 
 }

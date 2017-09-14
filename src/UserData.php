@@ -17,12 +17,12 @@ class UserData
     /**
      * UserData constructor.
      * @param string $userId
-     * @param UserDataItem[] $items
+     * @param array $data
      */
-    public function __construct(string $userId, array $items = [])
+    public function __construct(string $userId, array $data = [])
     {
         $this->userId = $userId;
-        $this->items = $items;
+        $this->items = $this->createDataItems($data);
     }
 
     /**
@@ -39,5 +39,24 @@ class UserData
     public function items(): array
     {
         return $this->items;
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    private function createDataItems(array $data): array
+    {
+        $items = [];
+        foreach ($data as $item) {
+            $items[] = new UserDataItem(
+                $item['label'],
+                $item['value'],
+                $item['isValid'],
+                $item['isOwner']
+            );
+        }
+
+        return $items;
     }
 }

@@ -14,6 +14,7 @@ $ composer require blockvis/civic-sip-php
 Please refer [Civic API documentation](https://docs.civic.com/api/index.html) for detailed integration instructions.
 ```php
 use Blockvis\Civic\Sip\AppConfig;
+use Blockvis\Civic\Sip\Client;
 
 // Configure Civic App credentials.
 $config = new AppConfig(

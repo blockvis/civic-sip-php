@@ -4,6 +4,7 @@ namespace Blockvis\Civic\Sip;
 
 use DateTimeImmutable;
 use GuzzleHttp\ClientInterface as HttpClient;
+use GuzzleHttp\Psr7\Request;
 use Lcobucci\Jose\Parsing\Parser;
 use Lcobucci\JWT\Signer\Ecdsa;
 use Lcobucci\JWT\Signer\Key;
@@ -46,6 +47,11 @@ class Client
     private $eccGenerator;
 
     /**
+     * @var Parser
+     */
+    private $parser;
+
+    /**
      * Client constructor.
      * @param AppConfig $config
      * @param HttpClient $httpClient
@@ -55,59 +61,61 @@ class Client
         $this->config = $config;
         $this->httpClient = $httpClient;
         $this->eccGenerator = EccFactory::getSecgCurves()->generator256r1();
+        $this->parser = new Parser;
     }
 
     /**
      * @param string $jwtToken
-     * @return array
+     * @return UserData
      */
-    public function exchangeToken(string $jwtToken)
+    public function exchangeToken(string $jwtToken): UserData
     {
-        $method = 'POST';
+        $requestMethod = 'POST';
         $path = 'scopeRequest/authCode';
-        $body = ['authToken' => $jwtToken];
+        $requestBody = $this->parser->jsonEncode(['authToken' => $jwtToken]);
 
-        $response = $this->httpClient->request(
-            $method,
+        $request = new Request(
+            $requestMethod,
             sprintf('%s/%s/%s', $this->baseUri, $this->config->env(), $path), [
-                'headers' => [
-                    'Content-Length' => strlen(json_encode($body)),
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                    'Authorization' => $this->makeAuthorizationHeader($path, $method, $body),
-                ],
-                'body' => ['json' => $body]
-            ]);
+            'Content-Length' => strlen($requestBody),
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'Authorization' => $this->makeAuthorizationHeader($path, $requestMethod, $requestBody),
+        ],
+            $requestBody
+        );
 
-        $result = json_decode($response->getBody());
+        $response = $this->httpClient->send($request);
+        $payload = json_decode($response->getBody());
 
         /** @var Plain $token */
-        $token = (new TokenParser(new Parser))->parse((string) $result->data);
-
+        $token = (new TokenParser(new Parser))->parse((string) $payload->data);
         $this->verify($token);
 
-        return $this->decode($token);
+        $userData = $token->claims()->get('data');
+        if ($payload->encrypted) {
+            $userData = $this->decrypt($userData);
+        }
+
+        return new UserData($payload->userId, $this->parser->jsonDecode($userData));
     }
 
     /**
-     * @param Plain $token
-     * @return array
+     * @param string $encrypted
+     * @return string
      */
-    private function decode(Plain $token): array
+    private function decrypt(string $encrypted): string
     {
-        $data = $token->claims()->get('data');
-        $iv = substr($data,0, 32);
-        $encoded = substr($data, 32);
+        $iv = substr($encrypted,0, 32);
+        $encodedData = substr($encrypted, 32);
 
-        $plaintext = openssl_decrypt(
-            base64_decode($encoded),
+        return openssl_decrypt(
+            base64_decode($encodedData),
             'AES-128-CBC',
             hex2bin($this->config->secret()),
             OPENSSL_RAW_DATA,
             hex2bin($iv)
         );
-
-        return json_decode($plaintext);
     }
 
     /**
@@ -145,14 +153,13 @@ class Client
 
     /**
      * @param string $targetPath
-     * @param string $targetMethod
+     * @param string $requestMethod
      * @param $requestBody
      * @return string
      */
-    private function makeAuthorizationHeader(string $targetPath, string $targetMethod, $requestBody)
+    private function makeAuthorizationHeader(string $targetPath, string $requestMethod, string $requestBody)
     {
-        $parser = new Parser;
-        $tokenBuilder = (new TokenBuilder($parser))
+        $tokenBuilder = (new TokenBuilder($this->parser))
             ->issuedBy($this->config->id())
             ->permittedFor($this->baseUri)
             ->relatedTo($this->config->id())
@@ -161,14 +168,14 @@ class Client
             ->canOnlyBeUsedAfter((new DateTimeImmutable())->modify('+1 minute'))
             ->expiresAt((new DateTimeImmutable())->modify('+3 minute'))
             ->withClaim('data', [
-                'method' => $targetMethod,
+                'method' => $requestMethod,
                 'path' => $targetPath
             ]);
 
         // Generate signed token.
         $token = $tokenBuilder->getToken(Ecdsa\Sha256::create(), $this->getTokenSingingKey());
         $extension = base64_encode(
-            (new Hmac\Sha256())->sign($parser->jsonEncode($requestBody), new Key($this->config->secret()))
+            (new Hmac\Sha256())->sign($requestBody, new Key($this->config->secret()))
         );
 
         return sprintf('Civic %s.%s', $token, $extension);

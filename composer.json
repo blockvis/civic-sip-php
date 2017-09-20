@@ -1,6 +1,7 @@
 {
     "name": "blockvis/civic-sip-php",
     "description": "The Civic Secure Identity Platform API client.",
+    "type": "library",
     "keywords": ["civic", "api", "sip", "authorization", "blockchain"],
     "minimum-stability": "stable",
     "license": "MIT",
@@ -12,6 +13,7 @@
         }
     ],
     "require": {
+        "php": "^7.0",
         "ramsey/uuid": "^3.7",
         "lcobucci/jwt": "4.0.0-alpha1",
         "mdanter/ecc": "^0.4.2",

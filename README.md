@@ -24,37 +24,6 @@ The Civic Member may share this previously authenticated identity data with Civi
 
 **Ultimately Civic Members have full control over their identity data and ability to choose what and who to share with.**
 
-## Civic integration
-Currently only Civic Hosted option is available for partners integration. This is the simplest route to integration as it provides a flow similar to the traditional oAuth2 authorization code flow, with Civic performing the role of the Authorization server.
-This option delivers a secure solution and minimises server side development required by the partner.
-
-The following user signup example explains the general Civic Hosted option codeflow.
-![Civic Code Flow](http://docs.civic.com/images/codeflow.png)
-
-1. **Signup.** The user clicks “Signup with Civic” button on your website page. The event handler calls a method in the Civic JS library to initiate signup.
-
-2. **Launch Popup.** A modal is displayed which contains an iframe to house the QR code. A request is made to the Civic server to generate a QR code for your scope request.
-
-3. **QR Code.** The server checks that the domain for the parent document of the iframe corresponds to the domain white list set in the partner account before serving the code. The QR code bridges the air gap between the browser and the user’s smart phone.
-
-4. **Scan.** The user scans the QR code using the Civic mobile app and is prompted to authorize or deny the scope request. The prompt highlights the data that is being requested and the requesting party.
-
-5. **Grant Request.** Upon granting the request, the data is sent to the Civic server.
-
-6. **Verify offline.** The Civic SIP server verifies the authenticity and integrity of the attestations received from the user’s mobile app. This process proves that the user data was attested to by Civic and that the user is currently in control of the private keys relevant to the data.
-
-7. **Verify on the blockchain.** The Civic server then verifies that the attestations are still valid on the blockchain and have not been revoked.
-
-8. **Encrypt and cache.** The data is encrypted and cached on the Civic server. Once this data is cached, a polling request from the iframe will receive a response containing an authorization code wrapped in a JWT token. The CivicJS browser-side library passes the token to the parent document. Your site is then responsible for passing the JWT token to your server.
-
-9. **Authorization Code exchange.** Use the Civic SIP client (this library) on your server to communicate with the Civic SIP server and exchange the authorization code (AC) for the requested user data. The SIP server first validates the JWT token, ensuring it was issued by Civic, is being used by the correct application id, and that the expiry time on the token has not lapsed. The enclosed AC is then verified and the encrypted cached data returned.
-
-10. **Decrypt.** Your server receives the encrypted data where it is decrypted using your application secret key. The result will contain a userId and any data requested (such as email, mobile number etc).
-
-11. **Complete user signup.** At this point you can store the necessary data and redirect the user to your app’s logged in experience.
-
-For subsequent logins the `userId` from `UserData` value object can be used to associate the user with your accounts system.
-
 ## Getting Started
 In order to integrate your application with Civic you need to do the following:
 
@@ -162,5 +131,37 @@ UserData {
   ]
 }
 ```
+
+## Civic integration
+Currently only Civic Hosted option is available for partners integration. This is the simplest route to integration as it provides a flow similar to the traditional oAuth2 authorization code flow, with Civic performing the role of the Authorization server.
+This option delivers a secure solution and minimises server side development required by the partner.
+
+The following user signup example explains the general Civic Hosted option codeflow.
+![Civic Code Flow](http://docs.civic.com/images/codeflow.png)
+
+1. **Signup.** The user clicks “Signup with Civic” button on your website page. The event handler calls a method in the Civic JS library to initiate signup.
+
+2. **Launch Popup.** A modal is displayed which contains an iframe to house the QR code. A request is made to the Civic server to generate a QR code for your scope request.
+
+3. **QR Code.** The server checks that the domain for the parent document of the iframe corresponds to the domain white list set in the partner account before serving the code. The QR code bridges the air gap between the browser and the user’s smart phone.
+
+4. **Scan.** The user scans the QR code using the Civic mobile app and is prompted to authorize or deny the scope request. The prompt highlights the data that is being requested and the requesting party.
+
+5. **Grant Request.** Upon granting the request, the data is sent to the Civic server.
+
+6. **Verify offline.** The Civic SIP server verifies the authenticity and integrity of the attestations received from the user’s mobile app. This process proves that the user data was attested to by Civic and that the user is currently in control of the private keys relevant to the data.
+
+7. **Verify on the blockchain.** The Civic server then verifies that the attestations are still valid on the blockchain and have not been revoked.
+
+8. **Encrypt and cache.** The data is encrypted and cached on the Civic server. Once this data is cached, a polling request from the iframe will receive a response containing an authorization code wrapped in a JWT token. The CivicJS browser-side library passes the token to the parent document. Your site is then responsible for passing the JWT token to your server.
+
+9. **Authorization Code exchange.** Use the Civic SIP client (this library) on your server to communicate with the Civic SIP server and exchange the authorization code (AC) for the requested user data. The SIP server first validates the JWT token, ensuring it was issued by Civic, is being used by the correct application id, and that the expiry time on the token has not lapsed. The enclosed AC is then verified and the encrypted cached data returned.
+
+10. **Decrypt.** Your server receives the encrypted data where it is decrypted using your application secret key. The result will contain a userId and any data requested (such as email, mobile number etc).
+
+11. **Complete user signup.** At this point you can store the necessary data and redirect the user to your app’s logged in experience.
+
+For subsequent logins the `userId` from `UserData` value object can be used to associate the user with your accounts system.
+
 ## License
 The software licensed under the [MIT license](LICENSE).

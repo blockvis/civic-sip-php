@@ -2,7 +2,9 @@
 
 namespace Blockvis\Civic\Sip;
 
-class UserDataItem
+use JsonSerializable;
+
+class UserDataItem implements JsonSerializable
 {
     /**
      * Civic SIP service challenges the user during scope request approval to ensure
@@ -70,6 +72,19 @@ class UserDataItem
     {
         return $this->isValid;
     }
+
+	/**
+	 * @return array
+	 */
+	public function jsonSerialize()
+	{
+		return [
+			'label' => $this->label,
+			'value' => $this->value,
+			'isValid' => $this->isValid,
+			'isOwner' => $this->isOwner,
+		];
+	}
 
     /**
      * Returns the item label.

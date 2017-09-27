@@ -2,7 +2,9 @@
 
 namespace Blockvis\Civic\Sip;
 
-class UserData
+use JsonSerializable;
+
+class UserData implements JsonSerializable
 {
     /**
      * @var UserDataItem[]
@@ -47,6 +49,14 @@ class UserData
         return array_values($this->items);
     }
 
+	/**
+	 * @return array|UserDataItem[]
+	 */
+	public function jsonSerialize()
+	{
+		return $this->items();
+	}
+
     /**
      * Returns the user id.
      *
@@ -77,4 +87,5 @@ class UserData
 
         return $items;
     }
+
 }

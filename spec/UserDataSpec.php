@@ -3,6 +3,7 @@
 namespace spec\Blockvis\Civic\Sip;
 
 use Blockvis\Civic\Sip\UserData;
+use JsonSerializable;
 use PhpSpec\ObjectBehavior;
 
 class UserDataSpec extends ObjectBehavior
@@ -20,6 +21,15 @@ class UserDataSpec extends ObjectBehavior
     function it_is_initializable()
     {
         $this->shouldHaveType(UserData::class);
+    }
+
+    function it_is_json_serializable()
+    {
+    	$this->shouldImplement(JsonSerializable::class);
+    	assert(json_encode($this->getWrappedObject()) === json_encode([
+			    ['label' => 'label1', 'value' => 'value1', 'isValid' => true, 'isOwner' => true],
+			    ['label' => 'label2', 'value' => 'value2', 'isValid' => true, 'isOwner' => false],
+		    ]), 'JSON representation');
     }
 
     function it_returns_data_items()

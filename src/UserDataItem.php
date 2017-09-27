@@ -5,6 +5,21 @@ namespace Blockvis\Civic\Sip;
 class UserDataItem
 {
     /**
+     * Civic SIP service challenges the user during scope request approval to ensure
+     * the user is in control of the private key originally used in the issuance of the data attestation.
+     *
+     * @var bool
+     */
+    private $isOwner;
+
+    /**
+     * Indicates whether or not the data is still considered valid on the blockchain.
+     *
+     * @var bool
+     */
+    private $isValid;
+
+    /**
      * Descriptive value identifier.
      *
      * @var string
@@ -19,22 +34,8 @@ class UserDataItem
     private $value;
 
     /**
-     * Indicates whether or not the data is still considered valid on the blockchain.
-     *
-     * @var bool
-     */
-    private $isValid;
-
-    /**
-     * Civic SIP service challenges the user during scope request approval to ensure
-     * the user is in control of the private key originally used in the issuance of the data attestation.
-     *
-     * @var bool
-     */
-    private $isOwner;
-
-    /**
      * UserDataItem constructor.
+     *
      * @param string $label
      * @param mixed $value
      * @param bool $isValid
@@ -49,22 +50,20 @@ class UserDataItem
     }
 
     /**
-     * @return string
+     * Returns true if user is in control of the private key
+     * originally used in the issuance of the data attestation,
+     * false otherwise.
+     *
+     * @return bool
      */
-    public function label(): string
+    public function isOwner(): bool
     {
-        return $this->label;
+        return $this->isOwner;
     }
 
     /**
-     * @return mixed
-     */
-    public function value()
-    {
-        return $this->value;
-    }
-
-    /**
+     * Returns true if the item is still considered valid on the blockchain, false otherwise.
+     *
      * @return bool
      */
     public function isValid(): bool
@@ -73,11 +72,23 @@ class UserDataItem
     }
 
     /**
-     * @return bool
+     * Returns the item label.
+     *
+     * @return string
      */
-    public function isOwner(): bool
+    public function label(): string
     {
-        return $this->isOwner;
+        return $this->label;
+    }
+
+    /**
+     * Returns the item value.
+     *
+     * @return mixed
+     */
+    public function value()
+    {
+        return $this->value;
     }
 
 }

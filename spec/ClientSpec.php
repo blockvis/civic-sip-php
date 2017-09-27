@@ -2,8 +2,8 @@
 
 namespace spec\Blockvis\Civic\Sip;
 
-use Blockvis\Civic\Sip\Client;
 use Blockvis\Civic\Sip\AppConfig;
+use Blockvis\Civic\Sip\Client;
 use GuzzleHttp\ClientInterface;
 use PhpSpec\ObjectBehavior;
 

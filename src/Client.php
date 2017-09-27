@@ -7,8 +7,8 @@ use GuzzleHttp\ClientInterface as HttpClient;
 use GuzzleHttp\Psr7\Request;
 use Lcobucci\Jose\Parsing\Parser;
 use Lcobucci\JWT\Signer\Ecdsa;
-use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Hmac;
+use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Token\Builder as TokenBuilder;
 use Lcobucci\JWT\Token\Parser as TokenParser;
 use Lcobucci\JWT\Token\Plain;
@@ -37,14 +37,14 @@ class Client
     private $config;
 
     /**
-     * @var HttpClient
-     */
-    private $httpClient;
-
-    /**
      * @var GeneratorPoint
      */
     private $eccGenerator;
+
+    /**
+     * @var HttpClient
+     */
+    private $httpClient;
 
     /**
      * @var Parser
@@ -53,6 +53,7 @@ class Client
 
     /**
      * Client constructor.
+     *
      * @param AppConfig $config
      * @param HttpClient $httpClient
      */
@@ -77,11 +78,11 @@ class Client
         $request = new Request(
             $requestMethod,
             sprintf('%s/%s/%s', $this->baseUri, $this->config->env(), $path), [
-            'Content-Length' => strlen($requestBody),
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json',
-            'Authorization' => $this->makeAuthorizationHeader($path, $requestMethod, $requestBody),
-        ],
+                'Content-Length' => strlen($requestBody),
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'Authorization' => $this->makeAuthorizationHeader($path, $requestMethod, $requestBody),
+            ],
             $requestBody
         );
 
@@ -89,7 +90,7 @@ class Client
         $payload = json_decode($response->getBody());
 
         /** @var Plain $token */
-        $token = (new TokenParser(new Parser))->parse((string) $payload->data);
+        $token = (new TokenParser(new Parser))->parse((string)$payload->data);
         $this->verify($token);
 
         $userData = $token->claims()->get('data');
@@ -106,7 +107,7 @@ class Client
      */
     private function decrypt(string $encrypted): string
     {
-        $iv = substr($encrypted,0, 32);
+        $iv = substr($encrypted, 0, 32);
         $encodedData = substr($encrypted, 32);
 
         return openssl_decrypt(
@@ -119,11 +120,14 @@ class Client
     }
 
     /**
-     * @param Plain $token
+     * @return Key
      */
-    private function verify(Plain $token)
+    private function getTokenSingingKey(): Key
     {
-        (new Validator)->assert($token, new SignedWith(Ecdsa\Sha256::create(), $this->getTokenVerificationKey()));
+        $privateKeySerializer = new PemPrivateKeySerializer(new DerPrivateKeySerializer(EccFactory::getAdapter()));
+        $privateKey = $this->eccGenerator->getPrivateKeyFrom(gmp_init($this->config->privateKey(), 16));
+
+        return new Key($privateKeySerializer->serialize($privateKey));
     }
 
     /**
@@ -134,21 +138,10 @@ class Client
         $publicKeySerializer = new PemPublicKeySerializer(new DerPublicKeySerializer(EccFactory::getAdapter()));
         $publicKey = $this->eccGenerator->getPublicKeyFrom(
             gmp_init(substr(self::SIP_PUB_HEX, 2, 64), 16),
-            gmp_init(substr(self::SIP_PUB_HEX, 66,64), 16)
+            gmp_init(substr(self::SIP_PUB_HEX, 66, 64), 16)
         );
 
         return new Key($publicKeySerializer->serialize($publicKey));
-    }
-
-    /**
-     * @return Key
-     */
-    private function getTokenSingingKey(): Key
-    {
-        $privateKeySerializer = new PemPrivateKeySerializer(new DerPrivateKeySerializer(EccFactory::getAdapter()));
-        $privateKey = $this->eccGenerator->getPrivateKeyFrom(gmp_init($this->config->privateKey(), 16));
-
-        return new Key($privateKeySerializer->serialize($privateKey));
     }
 
     /**
@@ -167,10 +160,13 @@ class Client
             ->issuedAt(new DateTimeImmutable())
             ->canOnlyBeUsedAfter((new DateTimeImmutable())->modify('+1 minute'))
             ->expiresAt((new DateTimeImmutable())->modify('+3 minute'))
-            ->withClaim('data', [
-                'method' => $requestMethod,
-                'path' => $targetPath
-            ]);
+            ->withClaim(
+                'data',
+                [
+                    'method' => $requestMethod,
+                    'path' => $targetPath,
+                ]
+            );
 
         // Generate signed token.
         $token = $tokenBuilder->getToken(Ecdsa\Sha256::create(), $this->getTokenSingingKey());
@@ -179,5 +175,13 @@ class Client
         );
 
         return sprintf('Civic %s.%s', $token, $extension);
+    }
+
+    /**
+     * @param Plain $token
+     */
+    private function verify(Plain $token)
+    {
+        (new Validator)->assert($token, new SignedWith(Ecdsa\Sha256::create(), $this->getTokenVerificationKey()));
     }
 }

@@ -5,27 +5,36 @@ namespace Blockvis\Civic\Sip;
 class AppConfig
 {
     /**
-     * @var string
-     */
-    private $id;
-
-    /**
-     * @var string
-     */
-    private $secret;
-
-    /**
-     * @var string
-     */
-    private $privateKey;
-
-    /**
+     * Application environment ('prod' by default).
+     *
      * @var string
      */
     private $env;
 
     /**
+     * Application ID.
+     *
+     * @var string
+     */
+    private $id;
+
+    /**
+     * Application Private Signing Key.
+     *
+     * @var string
+     */
+    private $privateKey;
+
+    /**
+     * Application Secret.
+     *
+     * @var string
+     */
+    private $secret;
+
+    /**
      * AppConfig constructor.
+     *
      * @param string $id
      * @param string $secret
      * @param string $privateKey
@@ -40,6 +49,18 @@ class AppConfig
     }
 
     /**
+     * Returns the application environment.
+     *
+     * @return string
+     */
+    public function env(): string
+    {
+        return $this->env;
+    }
+
+    /**
+     * Returns the application id.
+     *
      * @return string
      */
     public function id(): string
@@ -48,14 +69,8 @@ class AppConfig
     }
 
     /**
-     * @return string
-     */
-    public function secret(): string
-    {
-        return $this->secret;
-    }
-
-    /**
+     * Returns the application private signing key.
+     *
      * @return string
      */
     public function privateKey(): string
@@ -64,10 +79,12 @@ class AppConfig
     }
 
     /**
+     * Returns the application secret.
+     *
      * @return string
      */
-    public function env(): string
+    public function secret(): string
     {
-        return $this->env;
+        return $this->secret;
     }
 }

@@ -17,8 +17,7 @@
         "ext-gmp": "*",
         "ramsey/uuid": "^3.7",
         "guzzlehttp/guzzle": "^6.3",
-        "spomky-labs/jose": "^6.1",
-        "lcobucci/jwt": "4.0.0-alpha1"
+        "spomky-labs/jose": "^6.1"
     },
     "require-dev": {
         "phpspec/phpspec": "^4.0"

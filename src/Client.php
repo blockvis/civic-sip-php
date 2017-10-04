@@ -89,7 +89,7 @@ class Client
             $userData = $this->decrypt($userData);
         }
 
-        return new UserData($payload->userId, \GuzzleHttp\json_decode($userData));
+        return new UserData($payload->userId, \GuzzleHttp\json_decode($userData, true));
     }
 
     /**

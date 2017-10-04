@@ -40,11 +40,11 @@ class AppConfig
      * @param string $privateKey
      * @param string $env
      */
-    public function __construct(string $id, string $secret, string $privateKey, string $env = 'prod')
+    public function __construct($id, $secret, $privateKey, $env = 'prod')
     {
-        $this->id = $id;
-        $this->secret = $secret;
-        $this->privateKey = $privateKey;
+        $this->id = (string)$id;
+        $this->secret = (string)$secret;
+        $this->privateKey = (string)$privateKey;
         $this->env = strtolower($env);
     }
 
@@ -53,7 +53,7 @@ class AppConfig
      *
      * @return string
      */
-    public function env(): string
+    public function env()
     {
         return $this->env;
     }
@@ -63,7 +63,7 @@ class AppConfig
      *
      * @return string
      */
-    public function id(): string
+    public function id()
     {
         return $this->id;
     }
@@ -73,7 +73,7 @@ class AppConfig
      *
      * @return string
      */
-    public function privateKey(): string
+    public function privateKey()
     {
         return $this->privateKey;
     }
@@ -83,7 +83,7 @@ class AppConfig
      *
      * @return string
      */
-    public function secret(): string
+    public function secret()
     {
         return $this->secret;
     }

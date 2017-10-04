@@ -22,9 +22,9 @@ class UserData implements JsonSerializable
      * @param string $userId
      * @param array $data
      */
-    public function __construct(string $userId, array $data = [])
+    public function __construct($userId, array $data = [])
     {
-        $this->userId = $userId;
+        $this->userId = (string)$userId;
         $this->items = $this->createDataItems($data);
     }
 
@@ -34,9 +34,9 @@ class UserData implements JsonSerializable
      * @param string $label
      * @return UserDataItem|null
      */
-    public function getByLabel(string $label): ?UserDataItem
+    public function getByLabel($label)
     {
-        return $this->items[$label] ?? null;
+        return isset($this->items[$label]) ? $this->items[$label] : null;
     }
 
     /**
@@ -44,25 +44,25 @@ class UserData implements JsonSerializable
      *
      * @return UserDataItem[]
      */
-    public function items(): array
+    public function items()
     {
         return array_values($this->items);
     }
 
-	/**
-	 * @return array|UserDataItem[]
-	 */
-	public function jsonSerialize()
-	{
-		return $this->items();
-	}
+    /**
+     * @return array|UserDataItem[]
+     */
+    public function jsonSerialize()
+    {
+        return $this->items();
+    }
 
     /**
      * Returns the user id.
      *
      * @return string
      */
-    public function userId(): string
+    public function userId()
     {
         return $this->userId;
     }
@@ -73,7 +73,7 @@ class UserData implements JsonSerializable
      * @param array $data
      * @return array
      */
-    private function createDataItems(array $data): array
+    private function createDataItems(array $data)
     {
         $items = [];
         foreach ($data as $item) {

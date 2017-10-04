@@ -43,12 +43,12 @@ class UserDataItem implements JsonSerializable
      * @param bool $isValid
      * @param bool $isOwner
      */
-    public function __construct(string $label, $value, bool $isValid, bool $isOwner)
+    public function __construct($label, $value, $isValid, $isOwner)
     {
-        $this->label = $label;
-        $this->value = $value;
-        $this->isValid = $isValid;
-        $this->isOwner = $isOwner;
+        $this->label = (string)$label;
+        $this->value = (string)$value;
+        $this->isValid = (bool)$isValid;
+        $this->isOwner = (bool)$isOwner;
     }
 
     /**
@@ -58,7 +58,7 @@ class UserDataItem implements JsonSerializable
      *
      * @return bool
      */
-    public function isOwner(): bool
+    public function isOwner()
     {
         return $this->isOwner;
     }
@@ -68,30 +68,30 @@ class UserDataItem implements JsonSerializable
      *
      * @return bool
      */
-    public function isValid(): bool
+    public function isValid()
     {
         return $this->isValid;
     }
 
-	/**
-	 * @return array
-	 */
-	public function jsonSerialize()
-	{
-		return [
-			'label' => $this->label,
-			'value' => $this->value,
-			'isValid' => $this->isValid,
-			'isOwner' => $this->isOwner,
-		];
-	}
+    /**
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return [
+            'label' => $this->label,
+            'value' => $this->value,
+            'isValid' => $this->isValid,
+            'isOwner' => $this->isOwner,
+        ];
+    }
 
     /**
      * Returns the item label.
      *
      * @return string
      */
-    public function label(): string
+    public function label()
     {
         return $this->label;
     }

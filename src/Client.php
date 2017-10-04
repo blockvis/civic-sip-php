@@ -2,18 +2,12 @@
 
 namespace Blockvis\Civic\Sip;
 
-use DateTimeImmutable;
 use GuzzleHttp\ClientInterface as HttpClient;
 use GuzzleHttp\Psr7\Request;
-use Lcobucci\Jose\Parsing\Parser;
-use Lcobucci\JWT\Signer\Ecdsa;
-use Lcobucci\JWT\Signer\Hmac;
-use Lcobucci\JWT\Signer\Key;
-use Lcobucci\JWT\Token\Builder as TokenBuilder;
-use Lcobucci\JWT\Token\Parser as TokenParser;
-use Lcobucci\JWT\Token\Plain;
-use Lcobucci\JWT\Validation\Constraint\SignedWith;
-use Lcobucci\JWT\Validation\Validator;
+use Jose\Factory\JWKFactory;
+use Jose\Factory\JWSFactory;
+use Jose\Loader;
+use Jose\Object\JWKInterface;
 use Mdanter\Ecc\EccFactory;
 use Mdanter\Ecc\Primitives\GeneratorPoint;
 use Mdanter\Ecc\Serializer\PrivateKey\DerPrivateKeySerializer;
@@ -47,11 +41,6 @@ class Client
     private $httpClient;
 
     /**
-     * @var Parser
-     */
-    private $parser;
-
-    /**
      * Client constructor.
      *
      * @param AppConfig $config
@@ -62,22 +51,22 @@ class Client
         $this->config = $config;
         $this->httpClient = $httpClient;
         $this->eccGenerator = EccFactory::getSecgCurves()->generator256r1();
-        $this->parser = new Parser;
     }
 
     /**
      * @param string $jwtToken
      * @return UserData
      */
-    public function exchangeToken(string $jwtToken): UserData
+    public function exchangeToken($jwtToken)
     {
         $requestMethod = 'POST';
         $path = 'scopeRequest/authCode';
-        $requestBody = $this->parser->jsonEncode(['authToken' => $jwtToken]);
+        $requestBody = \GuzzleHttp\json_encode(['authToken' => $jwtToken]);
 
         $request = new Request(
             $requestMethod,
-            sprintf('%s/%s/%s', $this->baseUri, $this->config->env(), $path), [
+            sprintf('%s/%s/%s', $this->baseUri, $this->config->env(), $path),
+            [
                 'Content-Length' => strlen($requestBody),
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
@@ -89,23 +78,25 @@ class Client
         $response = $this->httpClient->send($request);
         $payload = json_decode($response->getBody());
 
-        /** @var Plain $token */
-        $token = (new TokenParser(new Parser))->parse((string)$payload->data);
-        $this->verify($token);
+        $jws = (new Loader())->loadAndVerifySignatureUsingKey(
+            (string)$payload->data,
+            $this->getTokenVerificationKey(),
+            ['ES256']
+        );
 
-        $userData = $token->claims()->get('data');
+        $userData = $jws->getClaim('data');
         if ($payload->encrypted) {
             $userData = $this->decrypt($userData);
         }
 
-        return new UserData($payload->userId, $this->parser->jsonDecode($userData));
+        return new UserData($payload->userId, \GuzzleHttp\json_decode($userData));
     }
 
     /**
      * @param string $encrypted
      * @return string
      */
-    private function decrypt(string $encrypted): string
+    private function decrypt($encrypted)
     {
         $iv = substr($encrypted, 0, 32);
         $encodedData = substr($encrypted, 32);
@@ -120,20 +111,20 @@ class Client
     }
 
     /**
-     * @return Key
+     * @return JWKInterface
      */
-    private function getTokenSingingKey(): Key
+    private function getTokenSingingKey()
     {
         $privateKeySerializer = new PemPrivateKeySerializer(new DerPrivateKeySerializer(EccFactory::getAdapter()));
         $privateKey = $this->eccGenerator->getPrivateKeyFrom(gmp_init($this->config->privateKey(), 16));
 
-        return new Key($privateKeySerializer->serialize($privateKey));
+        return JWKFactory::createFromKey($privateKeySerializer->serialize($privateKey));
     }
 
     /**
-     * @return Key
+     * @return JWKInterface
      */
-    private function getTokenVerificationKey(): Key
+    private function getTokenVerificationKey()
     {
         $publicKeySerializer = new PemPublicKeySerializer(new DerPublicKeySerializer(EccFactory::getAdapter()));
         $publicKey = $this->eccGenerator->getPublicKeyFrom(
@@ -141,7 +132,7 @@ class Client
             gmp_init(substr(self::SIP_PUB_HEX, 66, 64), 16)
         );
 
-        return new Key($publicKeySerializer->serialize($publicKey));
+        return JWKFactory::createFromKey($publicKeySerializer->serialize($publicKey));
     }
 
     /**
@@ -150,38 +141,31 @@ class Client
      * @param $requestBody
      * @return string
      */
-    private function makeAuthorizationHeader(string $targetPath, string $requestMethod, string $requestBody)
+    private function makeAuthorizationHeader($targetPath, $requestMethod, $requestBody)
     {
-        $tokenBuilder = (new TokenBuilder($this->parser))
-            ->issuedBy($this->config->id())
-            ->permittedFor($this->baseUri)
-            ->relatedTo($this->config->id())
-            ->identifiedBy(Uuid::uuid4())
-            ->issuedAt(new DateTimeImmutable())
-            ->canOnlyBeUsedAfter((new DateTimeImmutable())->modify('+1 minute'))
-            ->expiresAt((new DateTimeImmutable())->modify('+3 minute'))
-            ->withClaim(
-                'data',
-                [
+        $jws = JWSFactory::createJWSToCompactJSON(
+            [
+                'nbf'  => time() + 60,         // Not before
+                'iat'  => time(),              // Issued at
+                'exp'  => time() + 60 * 3,     // Expires at
+                'iss'  => $this->config->id(), // Issuer
+                'aud'  => $this->baseUri,      // Audience
+                'sub'  => $this->config->id(), // Subject
+                'jti'  => Uuid::uuid4(),       // ID
+                'data' => [                    // Custom claim
                     'method' => $requestMethod,
-                    'path' => $targetPath,
+                    'path'   => $targetPath,
                 ]
-            );
-
-        // Generate signed token.
-        $token = $tokenBuilder->getToken(Ecdsa\Sha256::create(), $this->getTokenSingingKey());
-        $extension = base64_encode(
-            (new Hmac\Sha256())->sign($requestBody, new Key($this->config->secret()))
+            ],
+            $this->getTokenSingingKey(),
+            [
+                'alg' => 'ES256',
+            ]
         );
 
-        return sprintf('Civic %s.%s', $token, $extension);
+        $extension = base64_encode(hash_hmac('sha256', $requestBody, $this->config->secret(), true));
+
+        return sprintf('Civic %s.%s', $jws, $extension);
     }
 
-    /**
-     * @param Plain $token
-     */
-    private function verify(Plain $token)
-    {
-        (new Validator)->assert($token, new SignedWith(Ecdsa\Sha256::create(), $this->getTokenVerificationKey()));
-    }
 }

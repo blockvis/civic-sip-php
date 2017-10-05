@@ -20,13 +20,13 @@ class UserDataItemSpec extends ObjectBehavior
 
     function it_is_json_serializable()
     {
-    	$this->shouldImplement(JsonSerializable::class);
-    	assert(json_encode($this->getWrappedObject()) === json_encode([
-    		'label' => 'label',
-		    'value' => 'value',
-		    'isValid' => true,
-		    'isOwner' => false,
-		]), 'JSON representation');
+        $this->shouldImplement(JsonSerializable::class);
+        assert(json_encode($this->getWrappedObject()) === json_encode([
+            'label' => 'label',
+            'value' => 'value',
+            'isValid' => true,
+            'isOwner' => false,
+        ]), 'JSON representation');
     }
 
     public function it_is_readable()

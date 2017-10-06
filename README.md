@@ -1,5 +1,4 @@
 # civic-sip-php
-**Beware! The library is in development. Stay tuned for stable release announcement.**
 
 Civic [Secure Identity Platform (SIP)](https://www.civic.com/secure-identity-platform) API client implemented in PHP.
 

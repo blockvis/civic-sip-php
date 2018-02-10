@@ -131,6 +131,22 @@ UserData {
 }
 ```
 
+You can iterate through the data items as following:
+
+```php
+foreach ($userData->items() as $dataItem) {
+    echo $dataItem->label() . ' = ' . $dataItem->value() . PHP_EOL;
+}
+``` 
+
+You can also access individual data items by their labels. Note that `userId` is a property of `UsedData` object and not included in data items array.
+
+```php
+$userId = $userData->userId();
+$email = $userData->getByLabel('contact.personal.email')->value();
+$phone = $userData->getByLabel('contact.personal.phoneNumber')->value();
+```
+
 ## Civic integration
 Currently only Civic Hosted option is available for partners integration. This is the simplest route to integration as it provides a flow similar to the traditional oAuth2 authorization code flow, with Civic performing the role of the Authorization server.
 This option delivers a secure solution and minimises server side development required by the partner.
